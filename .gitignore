@@ -1,3 +1,8 @@
+# Symlinked by catkin, should not be modified
+ros/src/CMakeLists.txt
+# External dep, should be downloaded by the user
+ros/src/cv_bridge/
+
 build/
 devel/
 lib/
