@@ -4,6 +4,7 @@
 #include "openvslam/config.h"
 #include "openvslam/tracking_module.h"
 
+#include <darknet/detector.hpp>
 #include <mutex>
 #include <vector>
 
@@ -92,6 +93,9 @@ protected:
 
     //! tracking flag for each current keypoint
     std::vector<bool> is_tracked_;
+
+    std::optional<darknet::Detections> detections_;
+    darknet::Detector const* detector_ = nullptr;
 };
 
 } // namespace publish

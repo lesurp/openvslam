@@ -8,6 +8,71 @@
 namespace openvslam {
 namespace publish {
 
+void draw_detections(cv::Mat& f,
+                     darknet::Detections const& detections,
+                     float detection_threshold,
+                     std::vector<std::string> labels) {
+    for (auto det : detections) {
+        int best_class = -1;
+        float best_detection = detection_threshold;
+        for (int j = 0; j < 80; ++j) {
+            if (det.prob[j] > best_detection) {
+                best_class = j;
+                best_detection = det.prob[j];
+                break;
+            }
+        }
+        if (best_class < 0) {
+            continue;
+        }
+
+        float red = 255.0;
+        float green = 255.0;
+        float blue = 0.0;
+        box b = det.bbox;
+
+        int left = (b.x - b.w / 2.) * f.cols;
+        int right = (b.x + b.w / 2.) * f.cols;
+        int top = (b.y - b.h / 2.) * f.rows;
+        int bot = (b.y + b.h / 2.) * f.rows;
+
+        if (left < 0)
+            left = 0;
+        if (right > f.cols - 1)
+            right = f.cols - 1;
+        if (top < 0)
+            top = 0;
+        if (bot > f.rows - 1)
+            bot = f.rows - 1;
+
+        cv::rectangle(f,
+                      cv::Point(left, top),
+                      cv::Point(right, bot),
+                      cv::Scalar(red, green, blue),
+                      1);
+        cv::putText(f,
+                    labels[best_class],
+                    cv::Point(left, bot),
+                    0,
+                    1.0,
+                    cv::Scalar_(red, green, blue));
+        // TODO: what is this..?
+        // it's never defined it seems
+        /*
+        if (det.mask)
+        {
+            image mask = float_to_image(14, 14, 1, dets[i].mask);
+            image resized_mask = resize_image(mask, b.w * f.cols, b.h * f.rows);
+            image tmask = threshold_image(resized_mask, .5);
+            embed_image(tmask, im, left, top);
+            free_image(mask);
+            free_image(resized_mask);
+            free_image(tmask);
+        }
+        */
+    }
+}
+
 frame_publisher::frame_publisher(const std::shared_ptr<config>& cfg, data::map_database* map_db,
                                  const unsigned int img_width)
     : cfg_(cfg), map_db_(map_db), img_width_(img_width),
@@ -82,6 +147,10 @@ cv::Mat frame_publisher::draw_frame(const bool draw_text) {
     if (draw_text) {
         // draw tracking info
         draw_info_text(img, tracking_state, num_tracked, elapsed_ms, mapping_is_enabled);
+    }
+
+    if (detections_) {
+        draw_detections(img, *detections_, detector_->detection_threshold(), detector_->labels());
     }
 
     return img;
@@ -219,6 +288,9 @@ void frame_publisher::update(tracking_module* tracker) {
             break;
         }
     }
+
+    detections_ = tracker->get_detections();
+    detector_ = tracker->get_detector();
 }
 
 } // namespace publish
