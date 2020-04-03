@@ -9,7 +9,8 @@
 #include "openvslam/module/frame_tracker.h"
 
 #include <mutex>
-
+#include <optional>
+#include <darknet/detector.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
@@ -67,6 +68,16 @@ public:
 
     //! Get the keypoint matches between the initial frame and the current frame
     std::vector<int> get_initial_matches() const;
+
+    darknet::Detector const* get_detector() const {
+        if (darknet_det_) {
+            return &*darknet_det_;
+        }
+        else {
+            return nullptr;
+        }
+    }
+    std::optional<darknet::Detections>&& get_detections() { return std::move(detections_); }
 
     //! Track a monocular frame
     //! (NOTE: distorted images are acceptable if calibrated)
@@ -253,6 +264,8 @@ protected:
 
     //! Pause of the tracking module is requested or not
     bool pause_is_requested_ = false;
+    std::optional<darknet::Detector> darknet_det_;
+    std::optional<darknet::Detections> detections_;
 };
 
 } // namespace openvslam

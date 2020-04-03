@@ -34,6 +34,21 @@ tracking_module::tracking_module(const std::shared_ptr<config>& cfg, system* sys
     if (camera_->setup_type_ == camera::setup_type_t::Stereo) {
         extractor_right_ = new feature::orb_extractor(cfg_->orb_params_);
     }
+
+    if (cfg->darknet_config_) {
+        // NOTE: we *cannot* make this const for now
+        // because darknet only takes *freaking* `char*` everywhere, although
+        // I'm almost certain they could ALL be const
+        // TLDR we circumvent the type system, hoping darknet doesn't do anything dirty down there ™
+        auto const& darknet_conf = *cfg->darknet_config_;
+        darknet_det_ = darknet::Detector(const_cast<char*>(darknet_conf.cfgfile.c_str()),
+                                         const_cast<char*>(darknet_conf.weightfile.c_str()),
+                                         const_cast<char*>(darknet_conf.labelfile.c_str()),
+                                         darknet_conf.detection_thr,
+                                         0,
+                                         darknet_conf.avg_frame,
+                                         darknet_conf.hier_thr);
+    }
 }
 
 tracking_module::~tracking_module() {
@@ -76,6 +91,11 @@ std::vector<int> tracking_module::get_initial_matches() const {
 
 Mat44_t tracking_module::track_monocular_image(const cv::Mat& img, const double timestamp, const cv::Mat& mask) {
     const auto start = std::chrono::system_clock::now();
+
+    // called BEFORE the color conversion...
+    if (darknet_det_) {
+        detections_ = darknet_det_->run(img);
+    }
 
     // color conversion
     img_gray_ = img;
