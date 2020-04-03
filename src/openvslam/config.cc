@@ -97,6 +97,30 @@ config::config(const YAML::Node& yaml_node, const std::string& config_file_path)
     if (camera_->setup_type_ == camera::setup_type_t::RGBD) {
         depthmap_factor_ = yaml_node_["depthmap_factor"].as<double>(1.0);
     }
+
+    auto cfgfile = yaml_node["Darknet.cfg_file"];
+    auto weightfile = yaml_node["Darknet.weight_file"];
+    auto labelfile = yaml_node["Darknet.label_file"];
+    if (cfgfile && weightfile && labelfile) {
+        spdlog::debug("darknet enabled");
+
+        DarknetConfig conf;
+        conf.cfgfile = cfgfile.Scalar();
+        conf.weightfile = weightfile.Scalar();
+        conf.labelfile = labelfile.Scalar();
+        conf.avg_frame = yaml_node["Darknet.avg_frame"].as<int>(3);
+        conf.detection_thr = yaml_node["Darknet.detection_thr"].as<float>(0.5);
+        conf.hier_thr = yaml_node["Darknet.hier_thr"].as<float>(0.5);
+
+        spdlog::debug("\tcfgfile: {}", conf.cfgfile);
+        spdlog::debug("\tweightfile: {}", conf.weightfile);
+        spdlog::debug("\tlabelfile: {}", conf.labelfile);
+        spdlog::debug("\tdetection_threshold: {}", conf.detection_thr);
+        spdlog::debug("\thier_threshold: {}", conf.hier_thr);
+        spdlog::debug("\tavg_frame: {}", conf.avg_frame);
+
+        darknet_config_ = std::move(conf);
+    }
 }
 
 config::~config() {

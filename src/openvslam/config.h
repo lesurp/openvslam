@@ -5,6 +5,7 @@
 #include "openvslam/feature/orb_params.h"
 
 #include <yaml-cpp/yaml.h>
+#include <optional>
 
 namespace openvslam {
 
@@ -36,6 +37,16 @@ public:
 
     //! depthmap factor (pixel_value / depthmap_factor = true_depth)
     double depthmap_factor_ = 1.0;
+
+    struct DarknetConfig {
+        std::string cfgfile;
+        std::string weightfile;
+        std::string labelfile;
+        int avg_frame;
+        float detection_thr;
+        float hier_thr;
+    };
+    std::optional<DarknetConfig> darknet_config_;
 };
 
 } // namespace openvslam
