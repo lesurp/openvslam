@@ -128,6 +128,7 @@ target_include_directories(${PROJECT_NAME}
 # Link to required libraries
 target_link_libraries(${PROJECT_NAME}
                       PUBLIC
+                      darknet
                       Threads::Threads
                       Eigen3::Eigen
                       yaml-cpp
